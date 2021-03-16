@@ -1,0 +1,62 @@
+=========================================
+Installing ONIE on NXP LS2088ARDB
+=========================================
+
+Cross-Compiling ONIE
+====================
+
+Change directories to ``build-config`` to compile ONIE.
+
+To compile ONIE first change directories to ``build-config`` and then
+type ``"make MACHINEROOT=../machine/nxp MACHINE=nxp_ls2088ardb all"``.  For example::
+
+  $ cd build-config
+  $ make -j4 MACHINEROOT=../machine/nxp MACHINE=nxp_ls2088ardb all
+
+When complete, the ONIE binaries are located in
+``build/images``::
+
+Installing the ONIE binaries
+============================
+Step 1: Install firmwares on NOR flash
+
+	1> get firmware_ls2088ardb_uboot_norboot.img and put it in your TFTP
+	wget http://www.nxp.com/lgfiles/sdk/lsdk1809/firmware_ls2088ardb_uboot_norboot.img
+
+	2> Intstall the img on NOR flash
+	=> tftp a0000000 <path>/firmware_ls2088ardb_uboot_norboot.img
+	=> protect off 580000000 +$filesize
+	=> erase 580000000 +$filesize
+	=> cp.b a0000000 580000000 $filesize
+
+note: Must do step 1 before step 2 and 3
+
+---------------------------------------------
+Step 2: Install uboot (onie-nxp_ls2088ardb-r0.bin.uboot+env)
+
+	=> tftp a0000000 <path>/onie-nxp_ls2088ardb-r0.bin.uboot+env
+	=> protect off 580100000 +$filesize
+	=> erase 580100000 +$filesize
+	=> cp.b a0000000 580100000 $filesize
+
+----------------------------------
+Step 3: Install kernel (nxp_ls2088ardb-r0.itb)
+
+	=> tftp a0000000 <path>/nxp_ls2088ardb-r0.itb
+	=> protect off 581000000 +$filesize
+	=> erase 581000000 +$filesize
+	=> cp.b a0000000 581000000 $filesize
+
+----------------------------------
+Step 4 -- Configure Serial Console
+
+	ONIE defaults the serial console baud rate to 115200.  You may need to
+	adjust your terminal settings.
+
+----------------------------
+Step 5 -- Restart The System
+
+	You can interrupt the boot process by pressing any key during the
+	count down::
+
+	=> reset

@@ -1,0 +1,62 @@
+#!/bin/sh
+
+#  Copyright (C) 2014 Curt Brune <curt@cumulusnetworks.com>
+#
+#  SPDX-License-Identifier:     GPL-2.0
+
+# x86_64 sysinfo implemenations: see /bin/onie-sysinfo
+
+# On platforms that support the ONIE TLV format, use the
+# onie-syseeprom command to find the 'Serial Number' TLV.
+get_serial_num_arch()
+{
+    if [ -x /usr/bin/onie-syseeprom ] ; then
+        sn="$(onie-syseeprom -g 0x23)"
+        if [ $? -eq 0 -a -n "$sn" ] ; then
+            echo $sn
+        else
+            log_console_msg "Unable to find 'Serial Number' TLV in EEPROM data."
+        fi
+    elif [ -x /usr/bin/dmidecode ] ; then
+        sn="$(dmidecode -s system-serial-number)"
+        if [ $? -eq 0 -a -n "$sn" ] ; then
+            echo $sn
+        fi
+    fi
+}
+
+# On platforms that support the ONIE TLV format, use the
+# onie-syseeprom command to find the 'Base MAC Address' TLV.
+get_ethaddr_arch()
+{
+    if [ -x /usr/bin/onie-syseeprom ] ; then
+        mac="$(onie-syseeprom -g 0x24)"
+        if [ $? -eq 0 -a -n "$mac" ] ; then
+            echo $mac
+        else
+            log_console_msg "Unable to find 'Base MAC Address' TLV in EEPROM data."
+        fi
+    fi
+}
+
+get_part_num_arch()
+{
+    if [ -x /usr/bin/onie-syseeprom ] ; then
+        pn="$(onie-syseeprom -g 0x22)"
+        if [ $? -eq 0 -a -n "$pn" ] ; then
+            echo $pn
+        else
+            log_console_msg "Unable to find 'Part Number' TLV in EEPROM data."
+        fi
+    elif [ -x /usr/bin/dmidecode ] ; then
+        pn="$(dmidecode -s system-product-name)"
+        if [ $? -eq 0 -a -n "$pn" ] ; then
+            echo $pn
+        fi
+    fi
+}
+
+# Local Variables:
+# mode: shell-script
+# eval: (sh-set-shell "/bin/sh" t nil)
+# End:

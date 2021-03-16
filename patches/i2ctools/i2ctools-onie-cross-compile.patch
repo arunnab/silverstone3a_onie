@@ -1,0 +1,33 @@
+Patch to modify i2ctools Makefile
+
+Copyright (C) 2014 Puneet <puneet@cumulusnetworks.com>
+Copyright (C) 2014 david_yang <david_yang@accton.com>
+
+SPDX-License-Identifier:     GPL-2.0
+
+diff --git a/Makefile b/Makefile
+index 5ea7486..0c859b3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -21,10 +21,9 @@ INSTALL_DIR	:= $(INSTALL) -m 755 -d
+ INSTALL_PROGRAM	:= $(INSTALL) -m 755
+ RM		:= rm -f
+ 
+-CC	?= gcc
++CC=$(CROSS_COMPILE)gcc
+ 
+-CFLAGS	?= -O2
+-# When debugging, use the following instead
++#When debugging, use the following instead
+ #CFLAGS	:= -O -g
+ CFLAGS	+= -Wall
+ 
+@@ -34,7 +33,5 @@ KERNELVERSION	:= $(shell uname -r)
+ 
+ all:
+ 
+-EXTRA	:=
+-#EXTRA	+= py-smbus
+-SRCDIRS	:= include eeprom stub tools $(EXTRA)
++SRCDIRS	:= include tools
+ include $(SRCDIRS:%=%/Module.mk)

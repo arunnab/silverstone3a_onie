@@ -1,0 +1,4 @@
+echo "running reset-cmd.."
+insmod /bin/seastone2_baseboard_cpld.ko > /dev/null 2>&1
+sleep 3
+echo 0xA15F 0x30 > /sys/devices/platform/sys_cpld/setreg

@@ -1,0 +1,7 @@
+*.pyc
+/cscope.out
+/cscope.out.in
+/cscope.out.po
+build
+local.make
+onie-installer

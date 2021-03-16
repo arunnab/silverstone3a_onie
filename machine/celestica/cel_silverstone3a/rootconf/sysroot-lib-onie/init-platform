@@ -1,0 +1,46 @@
+# -*- shell-script -*- 
+ 
+# Demonstration of the init-platform functionality 
+ 
+# This script fragment is sourced by /etc/init.d/init-arch.sh, which 
+# in turn executes the init_platform_pre_arch() and 
+# init_platform_post_arch() functions. 
+ 
+# A machine can use this feature to run any early boot scripts needed 
+# by the machine.  A typical usage would be to initialize specific 
+# hardware devices. 
+ 
+# Use this function to perform any post-initializations or clean-up. 
+# This function executes after the architecture initializations. 
+init_platform_post_arch() 
+{ 
+    echo "Running Celestica Silverstone 3a platform init routines..." 
+	#Get Current LED Mode
+	mode=`ipmitool raw 0x3a 0x9 0x1`
+	if [ $mode == 01 ]; then
+		echo "Current LED Mode is Auto ... Changing to Manual"
+		ipmitool raw 0x3a 0x9 0x2 0x0
+	fi
+	#Set LED To Alternate 1Hz
+	mode=`ipmitool raw 0x3a 0x9 0x1`
+	if [ $mode == 00 ]; then
+		echo "Set System LED to ready status"
+		ipmitool raw 0x3a 0x7 0x0 0x1
+	fi
+
+
+	#Create file that execute before ONIE reboot.
+	txt="#!/bin/sh\n
+		#Get Current LED Mode\n
+		mode=\`ipmitool raw 0x3a 0x9 0x1\`\n
+		if [ \$mode == 00 ]; then\n
+			echo \"Current LED Mode is Manual ... Changing to Auto\"\n
+			ipmitool raw 0x3a 0x9 0x2 0x1\n
+		fi\n"
+
+	echo -e $txt > /etc/rc0.d/K98setledmode.sh
+	echo -e $txt > /etc/rc6.d/K98setledmode.sh
+
+	chmod +x /etc/rc0.d/K98setledmode.sh
+	chmod +x /etc/rc6.d/K98setledmode.sh
+} 

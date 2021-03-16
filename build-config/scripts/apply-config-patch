@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#  Copyright (C) 2014 Mandeep Sandhu <mandeep.sandhu@cyaninc.com>
+#  Copyright (C) 2014 david_yang <david_yang@accton.com>
+#
+#  SPDX-License-Identifier:     GPL-2.0
+
+CONFIG="$1"
+CONFIGOPTS="$2"
+
+if [ -z "$CONFIG" -o ! -f "$CONFIG" ]; then
+    echo "ERROR: $CONFIG not found!"
+    echo "Usage: $0 /path/to/config-file /path/to/extra-config-options-file"
+    exit 100
+fi
+
+# If the config options file is present, process those options
+if [ -n "$CONFIGOPTS" -a -r "$CONFIGOPTS" ] ; then
+    # Iterate through all the config options in $CONFIGOPTS and replace their
+    # existence in $CONFIG with corresponding lines from $CONFIGOPTS
+
+    while read bbopt; do
+        optname=${bbopt%%=*}
+        sed -i "/\b$optname\b/c\\$bbopt" $CONFIG
+    done <$CONFIGOPTS
+fi

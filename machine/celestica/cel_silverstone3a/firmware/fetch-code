@@ -1,0 +1,12 @@
+#!/bin/bash
+
+rm -rf src/
+
+while read line 
+do 
+ eval "$line"
+done < config.svn
+
+echo ${SVN_USER}
+
+svn checkout --username ${SVN_USER} --password ${SVN_PWD}  http://10.204.28.70/svn/Software_1/Seastone-2/Seastone2_BSP/ src/fpga_prog

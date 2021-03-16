@@ -1,0 +1,121 @@
+====================================
+Installing ONIE on Accton AS6700_32X
+====================================
+
+Accton AS6700_32X has several revisions such as ``r01b`` and ``r01c``.  The
+``r0`` ONIE images are suitable for the machines till ``r01b`` revision.  And
+the ``r1`` ONIE images are suitable for the ``r01c`` machine.
+
+Cross-Compiling ONIE
+====================
+
+Compiling the r0 ONIE
+---------------------
+
+Change directories to ``build-config`` to compile ONIE.
+
+To compile ONIE first change directories to ``build-config`` and then
+type ``"make MACHINEROOT=../machine/accton MACHINE=accton_as6700_32x VENDOR_REV=r01b all"``.
+For example::
+
+  $ cd build-config
+  $ make -j4 MACHINEROOT=../machine/accton MACHINE=accton_as6700_32x VENDOR_REV=r01b all
+
+When complete, the ONIE binaries are located in
+``build/images``::
+
+  -rw-r--r-- 3604480 May  7 11:38 onie-accton_as6700_32x-r0.bin
+  -rw-r--r--  557872 May  7 11:38 onie-accton_as6700_32x-r0.bin.uboot
+
+Compiling the r1 ONIE
+---------------------
+
+To compile the ``r1`` ONIE type
+``"make MACHINEROOT=../machine/accton MACHINE=accton_as6700_32x VENDOR_REV=r01c all"``.
+
+When complete, the ONIE binaries are located in
+``build/images``::
+
+  -rw-r--r-- 3604480 May  7 11:38 onie-accton_as6700_32x-r1.bin
+  -rw-r--r--  557872 May  7 11:38 onie-accton_as6700_32x-r1.bin.uboot
+
+Installing the ONIE binaries
+============================
+
+For the Accton AS6700_32X two binary images need to be installed on the
+NOR flash.  Two images are required as a board info block resides in the
+NOR flash between U-Boot and the U-Boot environment variables::
+
+  Image 1 -- ONIE kernel and empty U-Boot envariables
+    name:  onie-accton_as6700_32x-r*.bin
+
+  Image 2 -- U-Boot binary
+    name:  onie-accton_as6700_32x-r*.bin.uboot
+
+Step 1 -- Put the ONIE files on a TFTP server
+---------------------------------------------
+
+The following directions assume the files are on the root of the TFTP
+server.
+
+Step 2 -- Install image1 (onie-accton_as6700_32x-r*.bin)
+--------------------------------------------------------
+
+Copying the image (onie-accton_as6700_32x-r0.bin) down using TFTP and flash to
+the NOR flash on the machines till ``r01b`` revision::
+
+  => setenv q1start 0x00130000
+  => setenv q1sz.b 0x800000
+  => tftp onie-accton_as6700_32x-r0.bin
+  => sf probe
+  => sf erase $q1start ${q1sz.b}
+  => sf write $fileaddr $q1start ${q1sz.b}
+
+For the ``r01c`` machine, it has to assign another address to ``q1start`` to
+flash the image (onie-accton_as6700_32x-r1.bin) to the NOR flash::
+
+  => setenv q1start 0x001c0000
+  => setenv q1sz.b 0x800000
+  => tftp onie-accton_as6700_32x-r1.bin
+  => sf probe
+  => sf erase $q1start ${q1sz.b}
+  => sf write $fileaddr $q1start ${q1sz.b}
+
+Step 3 -- Install image2 (onie-accton_as6700_32x-r*.bin.uboot)
+--------------------------------------------------------------
+
+The start address and partition size in all types of machines are the
+same.  Copying the image (take 'r1' as an example) down using TFTP and
+flash to the NOR flash::
+
+  => setenv q2start 0xfe000000
+  => setenv q2sz.b 0x00100000
+  => tftp onie-accton_as6700_32x-r1.bin.uboot
+  => protect off $q2start +${q2sz.b} && erase $q2start +${q2sz.b}
+  => cp.b $fileaddr $q2start ${q2sz.b} && protect on $q2start +${q2sz.b}
+
+Step 4 -- Configure Serial Console
+----------------------------------
+
+ONIE defaults the serial console baud rate to 115200.  You may need to
+adjust your terminal settings.
+
+Step 5 -- Restart The System
+----------------------------
+
+You can interrupt the boot process by pressing any key during the
+count down::
+
+  => reset
+
+Step 6 -- Optional
+------------------
+
+By default the system will start the ONIE in *install* mode.  After
+booting press the [Enter] key to active the console.
+
+Alternatively you can start the system in *rescue* mode so you can
+login and look around the ONIE.  To start the rescue mode type this::
+
+  => setenv reboot_cmd rescue
+  => boot

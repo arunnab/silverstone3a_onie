@@ -1,0 +1,99 @@
+Add Broadcom phy BCM54616 in igb driver
+
+diff --git a/drivers/net/ethernet/intel/igb/e1000_82575.c b/drivers/net/ethernet/intel/igb/e1000_82575.c
+index 0f69ef8..8a11f79 100644
+--- a/drivers/net/ethernet/intel/igb/e1000_82575.c
++++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
+@@ -226,6 +226,7 @@ static s32 igb_init_phy_params_82575(struct e1000_hw *hw)
+ 	case I347AT4_E_PHY_ID:
+ 	case M88E1112_E_PHY_ID:
+ 	case M88E1111_I_PHY_ID:
++	case BCM54616_E_PHY_ID:
+ 		phy->type		= e1000_phy_m88;
+ 		phy->ops.check_polarity	= igb_check_polarity_m88;
+ 		phy->ops.get_phy_info	= igb_get_phy_info_m88;
+@@ -290,7 +291,8 @@ static s32 igb_init_phy_params_82575(struct e1000_hw *hw)
+ 		ret_val = -E1000_ERR_PHY;
+ 		goto out;
+ 	}
+-
++	phy->ops.write_reg(hw,0x00,0x1140);
++	phy->ops.write_reg(hw,0x04,0x1e1);
+ out:
+ 	return ret_val;
+ }
+diff --git a/drivers/net/ethernet/intel/igb/e1000_defines.h b/drivers/net/ethernet/intel/igb/e1000_defines.h
+index 217f813..50d51e4 100644
+--- a/drivers/net/ethernet/intel/igb/e1000_defines.h
++++ b/drivers/net/ethernet/intel/igb/e1000_defines.h
+@@ -860,6 +860,7 @@
+ #define M88_VENDOR           0x0141
+ #define I210_I_PHY_ID        0x01410C00
+ #define M88E1543_E_PHY_ID    0x01410EA0
++#define BCM54616_E_PHY_ID    0x03625D10
+ 
+ /* M88E1000 Specific Registers */
+ #define M88E1000_PHY_SPEC_CTRL     0x10  /* PHY Specific Control Register */
+diff --git a/drivers/net/ethernet/intel/igb/igb_main.c b/drivers/net/ethernet/intel/igb/igb_main.c
+index 7dfbcde..f8387b5 100644
+--- a/drivers/net/ethernet/intel/igb/igb_main.c
++++ b/drivers/net/ethernet/intel/igb/igb_main.c
+@@ -134,6 +134,7 @@ static void igb_clean_rx_ring(struct igb_ring *);
+ static void igb_set_rx_mode(struct net_device *);
+ static void igb_update_phy_info(unsigned long);
+ static void igb_watchdog(unsigned long);
++static void ctrl_bcm54616S_led(struct e1000_hw *hw, u32 link, u16 speed);
+ static void igb_watchdog_task(struct work_struct *);
+ static netdev_tx_t igb_xmit_frame(struct sk_buff *skb, struct net_device *);
+ static struct rtnl_link_stats64 *igb_get_stats64(struct net_device *dev,
+@@ -4212,6 +4213,41 @@ static void igb_watchdog(unsigned long data)
+ 	schedule_work(&adapter->watchdog_task);
+ }
+ 
++static void ctrl_bcm54616S_led(struct e1000_hw *hw, u32 link, u16 speed)
++{
++   struct e1000_phy_info *phy = &hw->phy;
++
++   if(hw->phy.type != BCM54616_E_PHY_ID)
++        return;
++
++   if (link)
++   {
++      switch(speed)
++      {
++      case 100:
++      case 10:
++       phy->ops.write_reg(hw,0x1c,0xb4fe);/*LED2 on,LED1 off*/
++       phy->ops.write_reg(hw,0x1c,0xb863);/*enable activity*/
++      break;
++
++     case 1000:
++       phy->ops.write_reg(hw,0x1c,0xb4ef);/*LED1 on,LED2 off*/
++       phy->ops.write_reg(hw,0x1c,0xb863);/*enable activity*/
++     break;
++
++    default:
++     break;
++
++    }
++  }
++  else
++  {
++      phy->ops.write_reg(hw,0x1c,0xb4ee);
++      phy->ops.write_reg(hw,0x1c,0xb86e);
++  }
++
++}
++
+ static void igb_watchdog_task(struct work_struct *work)
+ {
+ 	struct igb_adapter *adapter = container_of(work,
+@@ -4357,7 +4393,7 @@ static void igb_watchdog_task(struct work_struct *work)
+ 			}
+ 		}
+ 	}
+-
++	ctrl_bcm54616S_led(hw, link, adapter->link_speed);
+ 	spin_lock(&adapter->stats64_lock);
+ 	igb_update_stats(adapter, &adapter->stats64);
+ 	spin_unlock(&adapter->stats64_lock);

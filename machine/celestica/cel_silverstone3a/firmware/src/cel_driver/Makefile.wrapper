@@ -1,0 +1,20 @@
+CEL_BSP_KERNEL_MODULES_LIST ?= $(shell find * -type d -maxdepth 0)
+
+PWD ?= $(shell pwd)
+
+obj-m += seastone2_baseboard_cpld.o
+
+ifndef CEL_BSP_KSRCS
+$(error CEL_BSP_KSRCS must be defined)
+endif
+
+all:
+	$(CROSS_COMPILE)gcc $(PWD)/fpga_prog.c -o fpga_prog
+	make -C $(CEL_BSP_KSRCS) M=$(PWD) modules
+
+install:
+	cp -f $(PWD)/fpga_prog $(INSTALL_DIR)
+	cp -f $(PWD)/seastone2_switchboard.ko $(INSTALL_DIR)
+
+clean:
+	make -C $(CEL_BSP_KSRCS) M=$(PWD) clean
