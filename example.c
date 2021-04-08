@@ -7,7 +7,6 @@
 #9999
 #101010
 #111111
-#22
 #include <stdio.h>
 int main()
 {
